@@ -1,19 +1,44 @@
-# Welcome to your Expo app 👋
+# Convertr - Currency Converter with Covert Mode
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This is a dual-purpose mobile application built with [Expo](https://expo.dev) and React Native. It serves as a currency converter on the surface, but contains a hidden covert communications feature for individuals in domestic high-risk situations.
 
-## Get started
+## Features
+
+- **Currency Converter (Cover App)**: A fully functional currency exchange calculator with real-time conversion between 10 major currencies
+- **Covert Mode**: Hidden feature activated by entering the password "123456" in the amount field
+- **Cross-Platform**: Runs on iOS, Android, and Web
+
+## Project Structure
+
+```
+convertr/
+├── app/                      # Expo Router pages
+│   ├── _layout.tsx          # Root layout with navigation
+│   ├── index.tsx            # Currency converter home page
+│   └── covert.tsx           # Covert app page
+├── components/              # Shared React Native components
+│   └── CurrencyConverter.tsx
+├── contexts/                # React Context providers
+│   └── AppStateContext.tsx
+├── covert-app/              # Covert app module
+│   ├── components/
+│   │   └── CovertMain.tsx
+│   └── README.md
+└── currency-app-nextjs/     # Original Next.js prototype (reference)
+```
+
+## Get Started
 
 1. Install dependencies
 
    ```bash
-   npm install
+   bun install
    ```
 
 2. Start the app
 
    ```bash
-   npx expo start
+   bun start
    ```
 
 In the output, you'll find options to open the app in a
@@ -25,15 +50,20 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
-## Get a fresh project
+## How to Access Covert Mode
 
-When you're ready, run:
+1. Open the app - you'll see the currency converter interface
+2. In the "Amount" field, enter: **123456**
+3. The app will automatically navigate to the covert communications feature
 
-```bash
-npm run reset-project
-```
+## Technologies Used
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+- **Expo SDK 54** - Cross-platform development framework
+- **React Native** - Mobile UI framework
+- **Expo Router** - File-based navigation
+- **React Native Picker Select** - Currency selection dropdowns
+- **Firebase** - Backend services (configured but not yet implemented)
+- **TypeScript** - Type-safe development
 
 ## Learn more
 
