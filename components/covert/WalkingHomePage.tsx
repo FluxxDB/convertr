@@ -2,6 +2,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
+    Animated,
     Dimensions,
     SafeAreaView,
     StatusBar,
@@ -56,7 +57,7 @@ export function WalkingHomePage({
             style={[
               styles.sosButton,
               {
-                backgroundColor: sosHolding ? colors.danger : `${colors.danger}e6`,
+                backgroundColor: sosHolding ? colors.danger : 'rgba(239, 68, 68, 0.9)',
                 transform: [{ scale: sosHolding ? 0.95 : 1 }],
               },
             ]}
@@ -67,7 +68,7 @@ export function WalkingHomePage({
             </Text>
             {sosHolding && (
               <View style={styles.sosProgressContainer}>
-                <View style={[styles.sosProgressBar, { width: `${(sosTimer / 3) * 100}%` }]} />
+                <Animated.View style={[styles.sosProgressBar, { width: `${(sosTimer / 3) * 100}%` }]} />
               </View>
             )}
           </TouchableOpacity>
@@ -78,8 +79,8 @@ export function WalkingHomePage({
           style={[
             styles.warningCard,
             {
-              backgroundColor: `${colors.warning}1a`,
-              borderColor: `${colors.warning}33`,
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              borderColor: 'rgba(245, 158, 11, 0.3)',
             },
           ]}
         >
@@ -165,22 +166,27 @@ const styles = StyleSheet.create({
   sosProgressBar: {
     height: '100%',
     backgroundColor: '#ffffff',
+    borderRadius: 4,
   },
   warningCard: {
     borderRadius: 16,
     padding: 24,
+    width: '100%',
     maxWidth: 400,
     borderWidth: 1,
   },
   warningContent: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
     gap: 12,
   },
   warningIcon: {
     marginTop: 2,
+    flexShrink: 0,
   },
   warningTextContainer: {
     flex: 1,
+    flexShrink: 1,
   },
   warningTitle: {
     fontSize: 16,
@@ -189,7 +195,8 @@ const styles = StyleSheet.create({
   },
   warningDescription: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 22,
+    flexWrap: 'wrap',
   },
 });
 

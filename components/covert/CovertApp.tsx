@@ -113,9 +113,9 @@ export function CovertApp() {
           handleSosTrigger();
           return 0;
         }
-        return prev + 0.1;
+        return prev + 0.05;
       });
-    }, 100);
+    }, 50);
   };
 
   const handleSosTrigger = async () => {
@@ -617,7 +617,7 @@ export function CovertApp() {
                 )}
                 {sosHolding && (
                   <View style={styles.sosProgressContainer}>
-                    <View style={[styles.sosProgressBar, { width: `${(sosTimer / 3) * 100}%` }]} />
+                    <Animated.View style={[styles.sosProgressBar, { width: `${(sosTimer / 3) * 100}%` }]} />
                   </View>
                 )}
               </View>
@@ -885,6 +885,7 @@ const styles = StyleSheet.create({
   sosProgressBar: {
     height: '100%',
     backgroundColor: '#ffffff',
+    borderRadius: 4,
   },
   connectivityBar: {
     position: 'absolute',
