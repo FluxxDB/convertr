@@ -1,4 +1,4 @@
-import { CovertMain } from '@/covert-app/components/CovertMain';
+import { CovertMain } from '@/components/covert/CovertMain';
 import { StyleSheet, View } from 'react-native';
 
 export default function CovertApp() {

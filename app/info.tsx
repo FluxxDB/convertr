@@ -1,4 +1,4 @@
-import { CovertInfo } from '@/covert-app/components/CovertInfo';
+import { CovertInfo } from '@/components/covert/CovertInfo';
 import { StyleSheet, View } from 'react-native';
 
 export default function InfoPage() {
