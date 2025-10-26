@@ -88,7 +88,7 @@ export function CurrencyConverter() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <View style={styles.container}>
+      <View style={styles.container} pointerEvents="box-none">
         {/* Header */}
         <View style={styles.header}>
         <View style={styles.headerBackground}>
