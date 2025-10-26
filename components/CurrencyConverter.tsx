@@ -128,6 +128,11 @@ export function CurrencyConverter() {
                 items={currencies}
                 style={pickerSelectStyles}
                 placeholder={{}}
+                useNativeAndroidPickerStyle={false}
+                fixAndroidTouchableBug={true}
+                pickerProps={{
+                  accessibilityLabel: 'From Currency Picker',
+                }}
               />
             </View>
           </View>
@@ -149,6 +154,11 @@ export function CurrencyConverter() {
                 items={currencies}
                 style={pickerSelectStyles}
                 placeholder={{}}
+                useNativeAndroidPickerStyle={false}
+                fixAndroidTouchableBug={true}
+                pickerProps={{
+                  accessibilityLabel: 'To Currency Picker',
+                }}
               />
             </View>
           </View>
@@ -283,6 +293,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     height: 56,
     justifyContent: 'center',
+    overflow: 'visible',
   },
   swapButtonContainer: {
     alignItems: 'center',
@@ -340,18 +351,25 @@ const pickerSelectStyles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     color: '#000000',
+    width: '100%',
   },
   inputAndroid: {
     fontSize: 16,
     paddingHorizontal: 16,
     paddingVertical: 8,
     color: '#000000',
+    width: '100%',
   },
   inputWeb: {
     fontSize: 16,
     paddingVertical: 12,
     paddingHorizontal: 16,
     color: '#000000',
+    width: '100%',
+  },
+  iconContainer: {
+    top: 20,
+    right: 10,
   },
 });
 
