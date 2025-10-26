@@ -14,10 +14,10 @@ interface EmergencyCallParams {
   };
 }
 
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const ELEVENLABS_API_URL = process.env.ELEVENLABS_API_URL;
-const AGENT_ID = process.env.AGENT_ID;
-const AGENT_PHONE_NUMBER_ID = process.env.AGENT_PHONE_NUMBER_ID;
+const ELEVENLABS_API_KEY = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY;
+const ELEVENLABS_API_URL = process.env.EXPO_PUBLIC_ELEVENLABS_API_URL;
+const AGENT_ID = process.env.EXPO_PUBLIC_AGENT_ID;
+const AGENT_PHONE_NUMBER_ID = process.env.EXPO_PUBLIC_AGENT_PHONE_NUMBER_ID;
 
 /**
  * Formats a phone number to ensure it has +1 prefix
@@ -57,6 +57,12 @@ export async function triggerEmergencyCall(
   location: string
 ): Promise<boolean> {
   try {
+    // Validate environment variables
+    if (!ELEVENLABS_API_KEY || !ELEVENLABS_API_URL || !AGENT_ID || !AGENT_PHONE_NUMBER_ID) {
+      console.error('[Emergency] Missing environment variables. Please check your .env file.');
+      return false;
+    }
+    
     // Validate that emergency contacts exist
     if (!userData.emergency_contacts || userData.emergency_contacts.length === 0) {
       console.error('[Emergency] No emergency contacts configured');
