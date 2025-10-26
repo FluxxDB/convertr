@@ -4,14 +4,14 @@ import { DeviceService } from '@/lib/deviceService';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    Keyboard,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  Keyboard,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 
@@ -96,10 +96,8 @@ export function CurrencyConverter() {
           <View style={styles.decorCircle2} />
         </View>
         <View style={styles.headerContent}>
-          <View style={styles.iconContainer}>
-            <Text style={styles.iconText}>📈</Text>
-          </View>
-          <Text style={styles.title}>Currency Converter</Text>
+          <View style={{ height: 8 }} />
+          <Text style={styles.title}>Convertr</Text>
           <Text style={styles.subtitle}>Real-time exchange rates • Instant conversion</Text>
         </View>
       </View>
