@@ -4,11 +4,13 @@ import { DeviceService } from '@/lib/deviceService';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
+    Keyboard,
     Platform,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     View,
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
@@ -85,9 +87,10 @@ export function CurrencyConverter() {
   }));
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
         <View style={styles.headerBackground}>
           <View style={styles.decorCircle1} />
           <View style={styles.decorCircle2} />
@@ -174,7 +177,8 @@ export function CurrencyConverter() {
       <View style={styles.footer}>
         <Text style={styles.footerText}>Exchange rates updated daily</Text>
       </View>
-    </View>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 

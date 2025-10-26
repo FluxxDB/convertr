@@ -18,6 +18,7 @@ import {
     Text,
     TextInput,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     View
 } from 'react-native';
 
@@ -586,17 +587,18 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       {/* Contact Modal */}
       {isContactModalOpen && (
         <Modal transparent visible={isContactModalOpen} animationType="fade">
-          <View style={styles.modalOverlay}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsContactModalOpen(false)} />
-            <Animated.View 
-              style={[
-                styles.modal, 
-                { 
-                  backgroundColor: colors.background,
-                  transform: [{ translateY: keyboardOffset }]
-                }
-              ]}
-            >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsContactModalOpen(false)} />
+              <Animated.View 
+                style={[
+                  styles.modal, 
+                  { 
+                    backgroundColor: colors.background,
+                    transform: [{ translateY: keyboardOffset }]
+                  }
+                ]}
+              >
                 <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
                   <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
                     {editingContact ? 'Edit Contact' : 'Add Contact'}
@@ -675,23 +677,25 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </View>
             </Animated.View>
             </View>
+          </TouchableWithoutFeedback>
         </Modal>
       )}
 
       {/* Message Modal */}
       {isMessageModalOpen && (
         <Modal transparent visible={isMessageModalOpen} animationType="fade">
-          <View style={styles.modalOverlay}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsMessageModalOpen(false)} />
-            <Animated.View 
-              style={[
-                styles.modal, 
-                { 
-                  backgroundColor: colors.background,
-                  transform: [{ translateY: keyboardOffset }]
-                }
-              ]}
-            >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsMessageModalOpen(false)} />
+              <Animated.View 
+                style={[
+                  styles.modal, 
+                  { 
+                    backgroundColor: colors.background,
+                    transform: [{ translateY: keyboardOffset }]
+                  }
+                ]}
+              >
                 <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
                   <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Edit Notes for Emergency</Text>
                   <TouchableOpacity onPress={() => setIsMessageModalOpen(false)}>
@@ -731,23 +735,25 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </View>
             </Animated.View>
             </View>
+          </TouchableWithoutFeedback>
         </Modal>
       )}
 
       {/* Full Name Modal */}
       {isFullNameModalOpen && (
         <Modal transparent visible={isFullNameModalOpen} animationType="fade">
-          <View style={styles.modalOverlay}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsFullNameModalOpen(false)} />
-            <Animated.View 
-              style={[
-                styles.modal, 
-                { 
-                  backgroundColor: colors.background,
-                  transform: [{ translateY: keyboardOffset }]
-                }
-              ]}
-            >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsFullNameModalOpen(false)} />
+              <Animated.View 
+                style={[
+                  styles.modal, 
+                  { 
+                    backgroundColor: colors.background,
+                    transform: [{ translateY: keyboardOffset }]
+                  }
+                ]}
+              >
                 <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
                   <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Edit Full Name</Text>
                   <TouchableOpacity onPress={() => setIsFullNameModalOpen(false)}>
@@ -785,23 +791,25 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </View>
             </Animated.View>
             </View>
+          </TouchableWithoutFeedback>
         </Modal>
       )}
 
       {/* Access PIN Modal */}
       {isAccessPinModalOpen && (
         <Modal transparent visible={isAccessPinModalOpen} animationType="fade">
-          <View style={styles.modalOverlay}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsAccessPinModalOpen(false)} />
-            <Animated.View 
-              style={[
-                styles.modal, 
-                { 
-                  backgroundColor: colors.background,
-                  transform: [{ translateY: keyboardOffset }]
-                }
-              ]}
-            >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsAccessPinModalOpen(false)} />
+              <Animated.View 
+                style={[
+                  styles.modal, 
+                  { 
+                    backgroundColor: colors.background,
+                    transform: [{ translateY: keyboardOffset }]
+                  }
+                ]}
+              >
                 <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
                   <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Edit Access PIN</Text>
                   <TouchableOpacity onPress={() => setIsAccessPinModalOpen(false)}>
@@ -845,6 +853,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </View>
             </Animated.View>
             </View>
+          </TouchableWithoutFeedback>
         </Modal>
       )}
     </Modal>
