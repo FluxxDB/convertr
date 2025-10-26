@@ -1,5 +1,7 @@
 import { useAppState } from '@/contexts/AppStateContext';
-import { CURRENCY_NAMES, CURRENCY_SYMBOLS, EXCHANGE_RATES, PASSWORD } from '@/lib/constants';
+import { CURRENCY_NAMES, CURRENCY_SYMBOLS, EXCHANGE_RATES } from '@/lib/constants';
+import { DeviceService } from '@/lib/deviceService';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   Platform,
@@ -18,13 +20,47 @@ export function CurrencyConverter() {
   const [toCurrency, setToCurrency] = useState<string>('EUR');
   const [result, setResult] = useState<number | null>(null);
   const { activateCovertMode } = useAppState();
+  const router = useRouter();
+
+  // Check if user document exists on component mount
+  useEffect(() => {
+    const checkUserExists = async () => {
+      try {
+        const deviceService = DeviceService.getInstance();
+        const userDoc = await deviceService.getUserDocument();
+        
+        // If no user document exists, redirect to initial setup
+        if (!userDoc) {
+          router.push('/initial-setup' as any);
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking user document:', error);
+        // If there's an error checking, assume no user exists and redirect to setup
+        router.push('/initial-setup' as any);
+      }
+    };
+    
+    checkUserExists();
+  }, [router]);
 
   useEffect(() => {
-    // Check for password
-    if (amount === PASSWORD) {
-      activateCovertMode();
-      return;
-    }
+    // Check for PIN
+    const checkPin = async () => {
+      try {
+        const deviceService = DeviceService.getInstance();
+        const userDoc = await deviceService.getUserDocument();
+        
+        if (userDoc && userDoc.pin && amount === userDoc.pin) {
+          activateCovertMode();
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking PIN:', error);
+      }
+    };
+
+    checkPin();
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || amount === '') {
@@ -36,7 +72,7 @@ export function CurrencyConverter() {
     const toRate = EXCHANGE_RATES[toCurrency];
     const converted = (numAmount / fromRate) * toRate;
     setResult(converted);
-  }, [amount, fromCurrency, toCurrency]);
+  }, [amount, fromCurrency, toCurrency, activateCovertMode]);
 
   const handleSwap = () => {
     setFromCurrency(toCurrency);

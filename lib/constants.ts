@@ -36,5 +36,3 @@ export const CURRENCY_NAMES: Record<string, string> = {
   INR: 'Indian Rupee',
   MXN: 'Mexican Peso',
 };
-
-export const PASSWORD = '123456';

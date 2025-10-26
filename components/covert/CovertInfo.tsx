@@ -24,6 +24,7 @@ export function CovertInfo() {
   const [name, setName] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
   const [sosMessage, setSosMessage] = useState('');
+  const [pin, setPin] = useState('');
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -37,6 +38,7 @@ export function CovertInfo() {
           setName(userDoc.name || '');
           setEmergencyContact(userDoc.emergency_contact_number || '');
           setSosMessage(userDoc.sos_message || '');
+          setPin(userDoc.pin || '');
           setFirebaseConnected(true);
         } else {
           // Create new document if none exists
@@ -45,6 +47,7 @@ export function CovertInfo() {
           setName(newUserDoc.name || '');
           setEmergencyContact(newUserDoc.emergency_contact_number || '');
           setSosMessage(newUserDoc.sos_message || '');
+          setPin(newUserDoc.pin || '');
           setFirebaseConnected(true);
         }
       } catch (error) {
@@ -67,6 +70,7 @@ export function CovertInfo() {
           setName('');
           setEmergencyContact('');
           setSosMessage('');
+          setPin('');
         } catch (fallbackError) {
           console.error('Fallback initialization failed:', fallbackError);
         }
@@ -90,6 +94,7 @@ export function CovertInfo() {
         name: name.trim(),
         emergency_contact_number: emergencyContact.trim(),
         sos_message: sosMessage.trim(),
+        pin: pin.trim(),
         lastAccessed: new Date().toISOString(),
       };
 
@@ -151,6 +156,20 @@ export function CovertInfo() {
               onChangeText={setName}
               placeholder="Enter your full name"
               placeholderTextColor="#999"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Access PIN (4-6 digits)</Text>
+            <TextInput
+              style={styles.input}
+              value={pin}
+              onChangeText={setPin}
+              placeholder="Enter 4-6 digit PIN"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              secureTextEntry
+              maxLength={6}
             />
           </View>
 

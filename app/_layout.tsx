@@ -6,6 +6,7 @@ export default function RootLayout() {
     <AppStateProvider>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
+        <Stack.Screen name="initial-setup" />
         <Stack.Screen name="covert" />
         <Stack.Screen name="info" />
       </Stack>

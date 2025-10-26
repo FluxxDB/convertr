@@ -10,6 +10,7 @@ export interface UserDocument {
   sos_message: string;
   emergency_contact_number: string;
   name: string;
+  pin?: string;
   createdAt: string;
   lastAccessed: string;
 }
@@ -52,7 +53,7 @@ export class DeviceService {
         );
       } else {
         // For mobile, use device-specific identifiers
-        const applicationId = Application.getApplicationId();
+        const applicationId = Application.applicationId;
         const deviceName = Device.deviceName || 'Unknown Device';
         const deviceType = Device.deviceType || 0;
         const osVersion = Device.osVersion || 'Unknown';
@@ -65,8 +66,10 @@ export class DeviceService {
         );
       }
 
-      this.deviceId = deviceId;
-      return deviceId;
+      // Sanitize device ID for Firebase compatibility
+      const sanitizedDeviceId = deviceId.replace(/[/\\]/g, '_');
+      this.deviceId = sanitizedDeviceId;
+      return sanitizedDeviceId;
     } catch (error) {
       console.error('Error generating device ID:', error);
       // Fallback to a random ID if device detection fails
