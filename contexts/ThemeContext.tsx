@@ -82,9 +82,27 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Load theme from storage
+    // Load theme from Firebase first, then AsyncStorage, then system preference
     const loadTheme = async () => {
       try {
+        // Try Firebase first
+        try {
+          const { DeviceService } = await import('@/lib/deviceService');
+          const deviceService = DeviceService.getInstance();
+          const userDoc = await deviceService.getUserDocument();
+          
+          if (userDoc?.theme && (userDoc.theme === 'light' || userDoc.theme === 'dark')) {
+            setTheme(userDoc.theme);
+            // Sync to AsyncStorage for quick access
+            await AsyncStorage.setItem('theme', userDoc.theme);
+            setMounted(true);
+            return;
+          }
+        } catch (firebaseError) {
+          console.error('Failed to load theme from Firebase:', firebaseError);
+        }
+        
+        // Fallback to AsyncStorage
         const savedTheme = await AsyncStorage.getItem('theme');
         if (savedTheme === 'light' || savedTheme === 'dark') {
           setTheme(savedTheme);
@@ -104,6 +122,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setTheme(newTheme);
     try {
       await AsyncStorage.setItem('theme', newTheme);
+      
+      // Also save to Firebase
+      try {
+        const { DeviceService } = await import('@/lib/deviceService');
+        const deviceService = DeviceService.getInstance();
+        const deviceId = await deviceService.getDeviceId();
+        
+        const { doc, setDoc } = await import('firebase/firestore');
+        const { db } = await import('@/config/firebase');
+        
+        const userRef = doc(db, 'users', deviceId);
+        await setDoc(userRef, {
+          theme: newTheme,
+          lastAccessed: new Date().toISOString(),
+        }, { merge: true });
+      } catch (firebaseError) {
+        console.error('Failed to save theme to Firebase:', firebaseError);
+      }
     } catch (error) {
       console.error('Failed to save theme:', error);
     }

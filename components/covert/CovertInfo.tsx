@@ -2,14 +2,14 @@ import { DeviceService, UserDocument } from '@/lib/deviceService';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { CovertStatusBar } from './CovertStatusBar';
 
@@ -36,8 +36,8 @@ export function CovertInfo() {
         if (userDoc) {
           setUserData(userDoc);
           setName(userDoc.name || '');
-          setEmergencyContact(userDoc.emergency_contact_number || '');
-          setSosMessage(userDoc.sos_message || '');
+          setEmergencyContact(userDoc.emergency_contacts?.[0]?.phone || '');
+          setSosMessage(userDoc.notes_for_emergency || '');
           setPin(userDoc.pin || '');
           setFirebaseConnected(true);
         } else {
@@ -45,8 +45,8 @@ export function CovertInfo() {
           const newUserDoc = await deviceService.createOrUpdateUserDocument();
           setUserData(newUserDoc);
           setName(newUserDoc.name || '');
-          setEmergencyContact(newUserDoc.emergency_contact_number || '');
-          setSosMessage(newUserDoc.sos_message || '');
+          setEmergencyContact(newUserDoc.emergency_contacts?.[0]?.phone || '');
+          setSosMessage(newUserDoc.notes_for_emergency || '');
           setPin(newUserDoc.pin || '');
           setFirebaseConnected(true);
         }
@@ -60,9 +60,11 @@ export function CovertInfo() {
           const deviceId = await deviceService.getDeviceId();
           const fallbackUserDoc: UserDocument = {
             deviceId,
-            sos_message: '',
-            emergency_contact_number: '',
+            notes_for_emergency: '',
+            emergency_contacts: [],
             name: '',
+            theme: 'dark',
+            append_location: true,
             createdAt: new Date().toISOString(),
             lastAccessed: new Date().toISOString(),
           };
@@ -92,8 +94,8 @@ export function CovertInfo() {
       // Update the user document with new values
       const updatedData: Partial<UserDocument> = {
         name: name.trim(),
-        emergency_contact_number: emergencyContact.trim(),
-        sos_message: sosMessage.trim(),
+        emergency_contacts: emergencyContact.trim() ? [{ name: 'Emergency Contact', phone: emergencyContact.trim() }] : [],
+        notes_for_emergency: sosMessage.trim(),
         pin: pin.trim(),
         lastAccessed: new Date().toISOString(),
       };
@@ -186,7 +188,7 @@ export function CovertInfo() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>SOS Message</Text>
+            <Text style={styles.label}>Notes for Emergency</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={sosMessage}

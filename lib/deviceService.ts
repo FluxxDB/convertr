@@ -7,9 +7,11 @@ import { Platform } from 'react-native';
 
 export interface UserDocument {
   deviceId: string;
-  sos_message: string;
-  emergency_contact_number: string;
+  notes_for_emergency: string;
+  emergency_contacts: Array<{name: string, phone: string}>;
   name: string;
+  theme: 'light' | 'dark';
+  append_location: boolean;
   pin?: string;
   createdAt: string;
   lastAccessed: string;
@@ -109,9 +111,11 @@ export class DeviceService {
         // Create new document with default values
         const newUserData: UserDocument = {
           deviceId,
-          sos_message: '',
-          emergency_contact_number: '',
+          notes_for_emergency: '',
+          emergency_contacts: [],
           name: '',
+          theme: 'dark',
+          append_location: true,
           createdAt: now,
           lastAccessed: now,
         };

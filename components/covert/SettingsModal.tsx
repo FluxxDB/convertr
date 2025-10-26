@@ -1,4 +1,5 @@
 import { useTheme } from '@/contexts/ThemeContext';
+import { DeviceService, UserDocument } from '@/lib/deviceService';
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
@@ -39,12 +40,18 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<EmergencyContact | null>(null);
   const [contactFormData, setContactFormData] = useState({ name: '', phone: '' });
-  const [emergencyMessage, setEmergencyMessage] = useState(
+  const [notesForEmergency, setNotesForEmergency] = useState(
     'I need help. This is an emergency. Please contact me immediately or send assistance to my location.'
   );
   const [appendLocation, setAppendLocation] = useState(true);
   const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
   const [tempMessage, setTempMessage] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [isFullNameModalOpen, setIsFullNameModalOpen] = useState(false);
+  const [tempFullName, setTempFullName] = useState('');
+  const [accessPin, setAccessPin] = useState('');
+  const [isAccessPinModalOpen, setIsAccessPinModalOpen] = useState(false);
+  const [tempAccessPin, setTempAccessPin] = useState('');
 
   // Animation states
   const [slideAnim] = useState(new Animated.Value(SCREEN_HEIGHT));
@@ -77,6 +84,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   useEffect(() => {
     if (isOpen) {
       setCurrentPage('main');
+      loadUserSettings(); // Load settings from Firebase
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: 0,
@@ -138,22 +146,27 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   };
 
   const saveContact = () => {
+    let updatedContacts: EmergencyContact[];
+    
     if (editingContact) {
-      setEmergencyContacts(
-        emergencyContacts.map((contact) =>
-          contact.id === editingContact.id
-            ? { ...contact, name: contactFormData.name, phone: contactFormData.phone }
-            : contact
-        )
+      updatedContacts = emergencyContacts.map((contact) =>
+        contact.id === editingContact.id
+          ? { ...contact, name: contactFormData.name, phone: contactFormData.phone }
+          : contact
       );
     } else {
-      setEmergencyContacts([
+      updatedContacts = [
         ...emergencyContacts,
         { id: Date.now().toString(), name: contactFormData.name, phone: contactFormData.phone },
-      ]);
+      ];
     }
+    
+    setEmergencyContacts(updatedContacts);
     setIsContactModalOpen(false);
     setContactFormData({ name: '', phone: '' });
+    
+    // Save to Firebase
+    saveToFirebase({ emergency_contacts: updatedContacts });
   };
 
   const removeEmergencyContact = (id: string) => {
@@ -163,21 +176,53 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
-          setEmergencyContacts(emergencyContacts.filter((contact) => contact.id !== id));
+          const updatedContacts = emergencyContacts.filter((contact) => contact.id !== id);
+          setEmergencyContacts(updatedContacts);
           setIsContactModalOpen(false);
+          
+          // Save to Firebase
+          saveToFirebase({ emergency_contacts: updatedContacts });
         },
       },
     ]);
   };
 
   const openMessageModal = () => {
-    setTempMessage(emergencyMessage);
+    setTempMessage(notesForEmergency);
     setIsMessageModalOpen(true);
   };
 
   const saveMessage = () => {
-    setEmergencyMessage(tempMessage);
+    setNotesForEmergency(tempMessage);
     setIsMessageModalOpen(false);
+    saveToFirebase({ notes_for_emergency: tempMessage });
+  };
+
+  const openFullNameModal = () => {
+    setTempFullName(fullName);
+    setIsFullNameModalOpen(true);
+  };
+
+  const saveFullName = () => {
+    setFullName(tempFullName);
+    setIsFullNameModalOpen(false);
+    saveToFirebase({ name: tempFullName });
+  };
+
+  const openAccessPinModal = () => {
+    setTempAccessPin(accessPin);
+    setIsAccessPinModalOpen(true);
+  };
+
+  const saveAccessPin = () => {
+    // Validate PIN: 4-6 digits only
+    if (!/^\d{4,6}$/.test(tempAccessPin)) {
+      Alert.alert('Invalid PIN', 'PIN must be 4-6 digits only.');
+      return;
+    }
+    setAccessPin(tempAccessPin);
+    setIsAccessPinModalOpen(false);
+    saveToFirebase({ pin: tempAccessPin });
   };
 
   const getTruncatedMessage = (message: string, maxLines = 3) => {
@@ -186,6 +231,47 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       return lines.slice(0, maxLines).join('\n') + '...';
     }
     return message;
+  };
+
+  // Firebase persistence functions
+  const loadUserSettings = async () => {
+    try {
+      const deviceService = DeviceService.getInstance();
+      const userDoc = await deviceService.getUserDocument();
+      
+      if (userDoc) {
+        setEmergencyContacts(userDoc.emergency_contacts || []);
+        setNotesForEmergency(userDoc.notes_for_emergency || 'I need help. This is an emergency. Please contact me immediately or send assistance to my location.');
+        setFullName(userDoc.name || '');
+        setAccessPin(userDoc.pin || '');
+        setAppendLocation(userDoc.append_location !== undefined ? userDoc.append_location : true);
+      }
+    } catch (error) {
+      console.error('Error loading user settings:', error);
+    }
+  };
+
+  const saveToFirebase = async (updates: Partial<UserDocument>) => {
+    try {
+      const deviceService = DeviceService.getInstance();
+      const deviceId = await deviceService.getDeviceId();
+      
+      const { doc, setDoc } = await import('firebase/firestore');
+      const { db } = await import('@/config/firebase');
+      
+      const userRef = doc(db, 'users', deviceId);
+      await setDoc(userRef, {
+        ...updates,
+        lastAccessed: new Date().toISOString(),
+      }, { merge: true });
+    } catch (error) {
+      console.error('Error saving to Firebase:', error);
+    }
+  };
+
+  const handleAppendLocationToggle = (value: boolean) => {
+    setAppendLocation(value);
+    saveToFirebase({ append_location: value });
   };
 
   const getPageTitle = () => {
@@ -302,12 +388,31 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
                   <TouchableOpacity
                     onPress={() => setCurrentPage('communication-settings')}
-                    style={[styles.settingItem, { backgroundColor: colors.surface }]}
+                    style={[styles.settingItem, { backgroundColor: colors.surface, marginBottom: 8 }]}
                   >
                     <Text style={[styles.settingItemTitle, { color: colors.textPrimary }]}>
                       Communication Settings
                     </Text>
                     <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+                  </TouchableOpacity>
+
+                  {/* Access PIN */}
+                  <TouchableOpacity
+                    onPress={openAccessPinModal}
+                    style={[styles.settingItem, { backgroundColor: colors.surface }]}
+                  >
+                    <View style={styles.settingItemLeft}>
+                      <Ionicons name="lock-closed-outline" size={20} color={colors.textPrimary} />
+                      <Text style={[styles.settingItemTitle, { color: colors.textPrimary }]}>
+                        Access PIN
+                      </Text>
+                    </View>
+                    <View style={styles.settingItemRight}>
+                      <Text style={[styles.settingItemSubtitle, { color: colors.textSecondary }]}>
+                        {accessPin ? '•'.repeat(Math.min(accessPin.length, 6)) : 'Not set'}
+                      </Text>
+                      <Feather name="edit-2" size={16} color={colors.textSecondary} />
+                    </View>
                   </TouchableOpacity>
                 </View>
 
@@ -381,15 +486,31 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
             {currentPage === 'communication-settings' && (
               <View>
-                {/* Emergency Message */}
+                {/* Full Name */}
                 <View style={styles.section}>
-                  <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Emergency Message</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Full Name</Text>
+                  <TouchableOpacity
+                    onPress={openFullNameModal}
+                    style={[styles.messagePreview, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                  >
+                    <Text style={[styles.messagePreviewText, { color: colors.textPrimary }]} numberOfLines={1}>
+                      {fullName || 'Enter your full name'}
+                    </Text>
+                    <View style={styles.messagePreviewIcon}>
+                      <Feather name="edit-2" size={16} color={colors.textSecondary} />
+                    </View>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Notes for Emergency */}
+                <View style={styles.section}>
+                  <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Notes for Emergency</Text>
                   <TouchableOpacity
                     onPress={openMessageModal}
                     style={[styles.messagePreview, { backgroundColor: colors.surface, borderColor: colors.border }]}
                   >
                     <Text style={[styles.messagePreviewText, { color: colors.textPrimary }]} numberOfLines={3}>
-                      {getTruncatedMessage(emergencyMessage)}
+                      {getTruncatedMessage(notesForEmergency)}
                     </Text>
                     <View style={styles.messagePreviewIcon}>
                       <Feather name="edit-2" size={16} color={colors.textSecondary} />
@@ -410,7 +531,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   </View>
                   <Switch
                     value={appendLocation}
-                    onValueChange={setAppendLocation}
+                    onValueChange={handleAppendLocationToggle}
                     trackColor={{ false: colors.border, true: colors.accent }}
                     thumbColor="#ffffff"
                     style={styles.appendLocationSwitch}
@@ -516,7 +637,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsMessageModalOpen(false)} />
             <View style={[styles.modal, { backgroundColor: colors.background }]}>
               <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Edit Emergency Message</Text>
+                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Edit Notes for Emergency</Text>
                 <TouchableOpacity onPress={() => setIsMessageModalOpen(false)}>
                   <Ionicons name="close" size={20} color={colors.textPrimary} />
                 </TouchableOpacity>
@@ -549,7 +670,105 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     !tempMessage.trim() && styles.saveButtonDisabled,
                   ]}
                 >
-                  <Text style={styles.saveButtonText}>Save Message</Text>
+                  <Text style={styles.saveButtonText}>Save Notes</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Full Name Modal */}
+      {isFullNameModalOpen && (
+        <Modal transparent visible={isFullNameModalOpen} animationType="fade">
+          <View style={styles.modalOverlay}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsFullNameModalOpen(false)} />
+            <View style={[styles.modal, { backgroundColor: colors.background }]}>
+              <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Edit Full Name</Text>
+                <TouchableOpacity onPress={() => setIsFullNameModalOpen(false)}>
+                  <Ionicons name="close" size={20} color={colors.textPrimary} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.modalContent}>
+                <TextInput
+                  value={tempFullName}
+                  onChangeText={setTempFullName}
+                  placeholder="Enter your full name"
+                  placeholderTextColor={colors.textSecondary}
+                  numberOfLines={1}
+                  style={[
+                    styles.formInput,
+                    { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary },
+                  ]}
+                />
+              </View>
+
+              <View style={[styles.modalFooter, { borderTopColor: colors.border }]}>
+                <TouchableOpacity
+                  onPress={saveFullName}
+                  disabled={!tempFullName.trim()}
+                  style={[
+                    styles.saveButton,
+                    styles.saveButtonFull,
+                    { backgroundColor: colors.accent },
+                    !tempFullName.trim() && styles.saveButtonDisabled,
+                  ]}
+                >
+                  <Text style={styles.saveButtonText}>Save Name</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
+
+      {/* Access PIN Modal */}
+      {isAccessPinModalOpen && (
+        <Modal transparent visible={isAccessPinModalOpen} animationType="fade">
+          <View style={styles.modalOverlay}>
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsAccessPinModalOpen(false)} />
+            <View style={[styles.modal, { backgroundColor: colors.background }]}>
+              <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Edit Access PIN</Text>
+                <TouchableOpacity onPress={() => setIsAccessPinModalOpen(false)}>
+                  <Ionicons name="close" size={20} color={colors.textPrimary} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.modalContent}>
+                <TextInput
+                  value={tempAccessPin}
+                  onChangeText={(text) => {
+                    // Only allow digits, max 6 characters
+                    const numericValue = text.replace(/\D/g, '').slice(0, 6);
+                    setTempAccessPin(numericValue);
+                  }}
+                  placeholder="Enter PIN (4-6 digits)"
+                  placeholderTextColor={colors.textSecondary}
+                  keyboardType="numeric"
+                  maxLength={6}
+                  secureTextEntry
+                  style={[
+                    styles.formInput,
+                    { backgroundColor: colors.surface, borderColor: colors.border, color: colors.textPrimary },
+                  ]}
+                />
+              </View>
+
+              <View style={[styles.modalFooter, { borderTopColor: colors.border }]}>
+                <TouchableOpacity
+                  onPress={saveAccessPin}
+                  disabled={!tempAccessPin.trim() || tempAccessPin.length < 4}
+                  style={[
+                    styles.saveButton,
+                    styles.saveButtonFull,
+                    { backgroundColor: colors.accent },
+                    (!tempAccessPin.trim() || tempAccessPin.length < 4) && styles.saveButtonDisabled,
+                  ]}
+                >
+                  <Text style={styles.saveButtonText}>Save PIN</Text>
                 </TouchableOpacity>
               </View>
             </View>

@@ -90,9 +90,11 @@ export function InitialSetup() {
       // Create user document with all information
       const userData: UserDocument = {
         deviceId: await deviceService.getDeviceId(),
-        sos_message: sosMessage.trim(),
-        emergency_contact_number: emergencyContact.trim(),
+        notes_for_emergency: sosMessage.trim(),
+        emergency_contacts: emergencyContact.trim() ? [{ name: 'Emergency Contact', phone: emergencyContact.trim() }] : [],
         name: name.trim(),
+        theme: 'dark',
+        append_location: true,
         pin: pin,
         createdAt: new Date().toISOString(),
         lastAccessed: new Date().toISOString(),
@@ -190,7 +192,7 @@ export function InitialSetup() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>SOS Message</Text>
+            <Text style={styles.label}>Notes for Emergency</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={sosMessage}

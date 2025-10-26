@@ -1,5 +1,7 @@
 import { useTheme } from '@/contexts/ThemeContext';
-import { Feather, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
     Animated,
@@ -26,6 +28,7 @@ type ConnectivityStatus = 'peer' | 'wifi' | 'cellular';
 
 export function CovertApp() {
   const { colors } = useTheme();
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sosHolding, setSosHolding] = useState(false);
@@ -34,6 +37,8 @@ export function CovertApp() {
   const [voiceMemoHolding, setVoiceMemoHolding] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [connectivityStatus] = useState<ConnectivityStatus>('wifi');
+  const [currentAddress, setCurrentAddress] = useState<string>('Getting location...');
+  const [locationAvailable, setLocationAvailable] = useState<boolean>(false);
 
   const sosTimerRef = useRef<NodeJS.Timeout | null>(null);
   const voiceMemoTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -181,6 +186,10 @@ export function CovertApp() {
     setCurrentPage('walking-home');
   };
 
+  const handleLogout = () => {
+    router.push('/' as any);
+  };
+
   useEffect(() => {
     return () => {
       if (sosTimerRef.current) clearInterval(sosTimerRef.current);
@@ -210,6 +219,86 @@ export function CovertApp() {
     }
   }, [sosAlertOpen]);
 
+  // Location services
+  useEffect(() => {
+    const requestLocation = async () => {
+      try {
+        // Request location permissions
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        
+        if (status !== 'granted') {
+          setCurrentAddress('Location permission denied');
+          setLocationAvailable(false);
+          return;
+        }
+
+        // Get current position
+        const location = await Location.getCurrentPositionAsync({});
+        
+        const lat = location.coords.latitude;
+        const lon = location.coords.longitude;
+        
+        // Fetch address from OpenStreetMap Nominatim
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`,
+            {
+              headers: {
+                'User-Agent': 'CovertApp/1.0', // Required by Nominatim
+              },
+            }
+          );
+          
+          const data = await response.json();
+          
+          if (data && data.address) {
+            const address = data.address;
+            // Format address: street, city, state
+            const parts = [
+              address.road || address.house_number,
+              address.city || address.town || address.village,
+              address.state,
+            ].filter(Boolean);
+            
+            if (parts.length > 0) {
+              setCurrentAddress(parts.join(', '));
+            } else {
+              // Fallback to coordinates if address parts not available
+              const latDir = lat >= 0 ? 'N' : 'S';
+              const lonDir = lon >= 0 ? 'E' : 'W';
+              setCurrentAddress(`${Math.abs(lat).toFixed(4)}°${latDir}, ${Math.abs(lon).toFixed(4)}°${lonDir}`);
+            }
+          } else {
+            // Fallback to coordinates if no address data
+            const latDir = lat >= 0 ? 'N' : 'S';
+            const lonDir = lon >= 0 ? 'E' : 'W';
+            setCurrentAddress(`${Math.abs(lat).toFixed(4)}°${latDir}, ${Math.abs(lon).toFixed(4)}°${lonDir}`);
+          }
+          
+          setLocationAvailable(true);
+        } catch (geocodeError) {
+          console.error('Error fetching address:', geocodeError);
+          // Fallback to coordinates if geocoding fails
+          const latDir = lat >= 0 ? 'N' : 'S';
+          const lonDir = lon >= 0 ? 'E' : 'W';
+          setCurrentAddress(`${Math.abs(lat).toFixed(4)}°${latDir}, ${Math.abs(lon).toFixed(4)}°${lonDir}`);
+          setLocationAvailable(true);
+        }
+      } catch (error) {
+        console.error('Error getting location:', error);
+        setCurrentAddress('Location unavailable');
+        setLocationAvailable(false);
+      }
+    };
+
+    requestLocation();
+    
+    // Update location every 5 minutes
+    const interval = setInterval(requestLocation, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   const getConnectivityInfo = () => {
     switch (connectivityStatus) {
       case 'peer':
@@ -237,8 +326,6 @@ export function CovertApp() {
       />
     );
   }
-
-  const connectivity = getConnectivityInfo();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]} {...panResponder.panHandlers}>
@@ -302,6 +389,15 @@ export function CovertApp() {
               >
                 SOS {sosHolding ? '(Sending...)' : '(Press & Hold)'}
               </Text>
+            </TouchableOpacity>
+
+            {/* Log Out Button */}
+            <TouchableOpacity
+              onPress={handleLogout}
+              style={[styles.quickActionButton, { backgroundColor: 'transparent' }]}
+            >
+              <Ionicons name="log-out-outline" size={20} color={colors.textSecondary} />
+              <Text style={[styles.quickActionText, { color: colors.textPrimary }]}>Log Out</Text>
             </TouchableOpacity>
           </View>
 
@@ -480,12 +576,12 @@ export function CovertApp() {
           </View>
         </ScrollView>
 
-        {/* Connectivity Status Bar */}
+        {/* Location Status Bar */}
         <View style={styles.connectivityBar}>
           <View style={[styles.connectivityBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <MaterialCommunityIcons name={connectivity.icon as any} size={16} color={colors.accent} />
-            <Text style={[styles.connectivityText, { color: colors.textPrimary }]}>
-              {connectivity.text}
+            <View style={[styles.greenDot, { backgroundColor: locationAvailable ? '#28a745' : '#ef4444' }]} />
+            <Text style={[styles.connectivityText, { color: colors.textPrimary }]} numberOfLines={1}>
+              {currentAddress}
             </Text>
           </View>
         </View>
@@ -771,6 +867,13 @@ const styles = StyleSheet.create({
   connectivityText: {
     fontSize: 14,
     fontWeight: '500',
+    flex: 1,
+  },
+  greenDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#28a745',
   },
   alertOverlay: {
     ...StyleSheet.absoluteFillObject,
