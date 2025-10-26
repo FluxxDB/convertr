@@ -1,4 +1,6 @@
 import { useTheme } from '@/contexts/ThemeContext';
+import { DeviceService } from '@/lib/deviceService';
+import { triggerEmergencyCall } from '@/lib/emergencyService';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
@@ -34,11 +36,16 @@ export function CovertApp() {
   const [sosHolding, setSosHolding] = useState(false);
   const [sosTimer, setSosTimer] = useState(0);
   const [sosAlertOpen, setSosAlertOpen] = useState(false);
+  const [sosAlertMessage, setSosAlertMessage] = useState<{title: string, message: string}>({
+    title: 'Alerting Emergency Services and Contacts',
+    message: 'Your emergency contacts and local services are being notified of your situation.'
+  });
   const [voiceMemoHolding, setVoiceMemoHolding] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [connectivityStatus] = useState<ConnectivityStatus>('wifi');
   const [currentAddress, setCurrentAddress] = useState<string>('Getting location...');
   const [locationAvailable, setLocationAvailable] = useState<boolean>(false);
+  const [detailedLocation, setDetailedLocation] = useState<string>('');
 
   const sosTimerRef = useRef<NodeJS.Timeout | null>(null);
   const voiceMemoTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -138,19 +145,79 @@ export function CovertApp() {
   };
 
   // SOS Button handlers
-  const handleSosPress = () => {
+  const handleSosPress = async () => {
     setSosHolding(true);
     setSosTimer(0);
     sosTimerRef.current = setInterval(() => {
       setSosTimer((prev) => {
         if (prev >= 3) {
           handleSosRelease();
-          setSosAlertOpen(true);
+          handleSosTrigger();
           return 0;
         }
         return prev + 0.1;
       });
     }, 100);
+  };
+
+  const handleSosTrigger = async () => {
+    try {
+      // Load user data from Firebase
+      const deviceService = DeviceService.getInstance();
+      const userData = await deviceService.getUserDocument();
+      
+      if (!userData) {
+        console.error('[SOS] No user data found');
+        setSosAlertMessage({
+          title: 'Error',
+          message: 'Unable to access user data. Please try again.'
+        });
+        setSosAlertOpen(true);
+        return;
+      }
+
+      // Validate emergency contacts exist
+      if (!userData.emergency_contacts || userData.emergency_contacts.length === 0) {
+        console.error('[SOS] No emergency contacts configured');
+        setSosAlertMessage({
+          title: 'No Emergency Contacts',
+          message: 'Please add emergency contacts in settings before using this feature.'
+        });
+        setSosAlertOpen(true);
+        return;
+      }
+
+      // Get location (use detailed location if available, otherwise use current display)
+      const location = detailedLocation || currentAddress || 'Location unavailable';
+
+      // Trigger emergency call
+      const success = await triggerEmergencyCall(userData, location);
+
+      if (success) {
+        const contactName = userData.emergency_contacts[0]?.name || 'Emergency Contact';
+        console.log(`[SOS] Emergency call placed to ${contactName}`);
+        setSosAlertMessage({
+          title: 'Emergency Call Placed',
+          message: `Emergency call successfully placed to ${contactName}. Help is on the way.`
+        });
+      } else {
+        console.error('[SOS] Failed to place emergency call');
+        setSosAlertMessage({
+          title: 'Call Failed',
+          message: 'Unable to place emergency call. Please try again or contact emergency services directly.'
+        });
+      }
+
+      // Show alert modal regardless of success/failure
+      setSosAlertOpen(true);
+    } catch (error) {
+      console.error('[SOS] Error in emergency trigger:', error);
+      setSosAlertMessage({
+        title: 'Error',
+        message: 'An error occurred while attempting to place the emergency call.'
+      });
+      setSosAlertOpen(true);
+    }
   };
 
   const handleSosRelease = () => {
@@ -253,17 +320,32 @@ export function CovertApp() {
           
           if (data && data.address) {
             const address = data.address;
-            // Format address: street, city, state
-            const parts = [
+            
+            // Create detailed address with house number, road, city, state, postcode
+            const detailedParts = [
+              address.house_number,
+              address.road,
+              address.city || address.town || address.village,
+              address.state,
+              address.postcode,
+            ].filter(Boolean);
+            
+            // Create simplified address for display
+            const simpleParts = [
               address.road || address.house_number,
               address.city || address.town || address.village,
               address.state,
             ].filter(Boolean);
             
-            if (parts.length > 0) {
-              setCurrentAddress(parts.join(', '));
+            // Store detailed location for emergency calls
+            const detailedAddress = detailedParts.join(', ');
+            setDetailedLocation(detailedAddress);
+            
+            // Display simplified version in status bar
+            if (simpleParts.length > 0) {
+              setCurrentAddress(simpleParts.join(', '));
             } else {
-              // Fallback to coordinates if address parts not available
+              // Fallback to coordinates
               const latDir = lat >= 0 ? 'N' : 'S';
               const lonDir = lon >= 0 ? 'E' : 'W';
               setCurrentAddress(`${Math.abs(lat).toFixed(4)}°${latDir}, ${Math.abs(lon).toFixed(4)}°${lonDir}`);
@@ -272,7 +354,9 @@ export function CovertApp() {
             // Fallback to coordinates if no address data
             const latDir = lat >= 0 ? 'N' : 'S';
             const lonDir = lon >= 0 ? 'E' : 'W';
-            setCurrentAddress(`${Math.abs(lat).toFixed(4)}°${latDir}, ${Math.abs(lon).toFixed(4)}°${lonDir}`);
+            const coordString = `${Math.abs(lat).toFixed(4)}°${latDir}, ${Math.abs(lon).toFixed(4)}°${lonDir}`;
+            setCurrentAddress(coordString);
+            setDetailedLocation(coordString);
           }
           
           setLocationAvailable(true);
@@ -281,7 +365,9 @@ export function CovertApp() {
           // Fallback to coordinates if geocoding fails
           const latDir = lat >= 0 ? 'N' : 'S';
           const lonDir = lon >= 0 ? 'E' : 'W';
-          setCurrentAddress(`${Math.abs(lat).toFixed(4)}°${latDir}, ${Math.abs(lon).toFixed(4)}°${lonDir}`);
+          const coordString = `${Math.abs(lat).toFixed(4)}°${latDir}, ${Math.abs(lon).toFixed(4)}°${lonDir}`;
+          setCurrentAddress(coordString);
+          setDetailedLocation(coordString);
           setLocationAvailable(true);
         }
       } catch (error) {
@@ -605,10 +691,10 @@ export function CovertApp() {
                 <Ionicons name="warning" size={40} color="#ffffff" />
               </Animated.View>
               <Text style={[styles.alertTitle, { color: colors.textPrimary }]}>
-                Alerting Emergency Services and Contacts
+                {sosAlertMessage.title}
               </Text>
               <Text style={[styles.alertText, { color: colors.textSecondary }]}>
-                Your emergency contacts and local services are being notified of your situation.
+                {sosAlertMessage.message}
               </Text>
               <TouchableOpacity
                 onPress={() => setSosAlertOpen(false)}
