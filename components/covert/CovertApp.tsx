@@ -6,18 +6,18 @@ import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Dimensions,
-    Platform,
-    Pressable,
-    SafeAreaView,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Animated,
+  Dimensions,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SettingsModal } from './SettingsModal';
@@ -508,7 +508,7 @@ export function CovertApp() {
           </TouchableOpacity>
 
           <View style={styles.headerTitle}>
-            <Text style={[styles.headerTitleText, { color: colors.textPrimary }]}>Covert </Text>
+            <Text style={[styles.headerTitleText, { color: colors.textPrimary }]}>Covrt </Text>
             <Text style={[styles.headerVersion, { color: colors.textSecondary }]}>v1</Text>
           </View>
 
