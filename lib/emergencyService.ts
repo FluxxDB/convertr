@@ -14,10 +14,10 @@ interface EmergencyCallParams {
   };
 }
 
-const ELEVENLABS_API_KEY = 'sk_90507edb4a1ddabab1f8af3c078cad5835436f4b5ee120b0';
-const ELEVENLABS_API_URL = 'https://api.elevenlabs.io/v1/convai/twilio/outbound-call';
-const AGENT_ID = 'agent_2401k8f7my85eg48nrt34gv2bcgt';
-const AGENT_PHONE_NUMBER_ID = '67KT0465VqgdB70dG9cN';
+const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
+const ELEVENLABS_API_URL = process.env.ELEVENLABS_API_URL;
+const AGENT_ID = process.env.AGENT_ID;
+const AGENT_PHONE_NUMBER_ID = process.env.AGENT_PHONE_NUMBER_ID;
 
 /**
  * Formats a phone number to ensure it has +1 prefix
