@@ -3,28 +3,29 @@ import { DeviceService } from '@/lib/deviceService';
 import { triggerEmergencyCall } from '@/lib/emergencyService';
 import { Note, NotepadService } from '@/lib/notepadService';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Animated,
-  Dimensions,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Animated,
+    Dimensions,
+    Platform,
+    Pressable,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { NotepadPage } from './NotepadPage';
 import { SettingsModal } from './SettingsModal';
 import { VoiceMemoPage } from './VoiceMemoPage';
 import { WalkingHomePage } from './WalkingHomePage';
-import { NotepadPage } from './NotepadPage';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.85;
@@ -55,6 +56,7 @@ export function CovertApp() {
 
   const sosTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const voiceMemoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sosHapticIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const notepadService = NotepadService.getInstance();
 
   // Animation refs
@@ -108,6 +110,14 @@ export function CovertApp() {
 
   // SOS Button handlers
   const handleSosPress = async () => {
+    // Haptic feedback on press
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    
+    // Continuous haptic feedback while holding
+    sosHapticIntervalRef.current = setInterval(() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }, 150); // Vibrate every 150ms
+    
     setSosHolding(true);
     setSosTimer(0);
     sosTimerRef.current = setInterval(() => {
@@ -123,6 +133,9 @@ export function CovertApp() {
   };
 
   const handleSosTrigger = async () => {
+    // Success haptic - notify user SOS is triggered
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    
     try {
       // Load user data from Firebase
       const deviceService = DeviceService.getInstance();
@@ -183,6 +196,12 @@ export function CovertApp() {
   };
 
   const handleSosRelease = () => {
+    // Stop continuous haptic feedback
+    if (sosHapticIntervalRef.current) {
+      clearInterval(sosHapticIntervalRef.current);
+      sosHapticIntervalRef.current = null;
+    }
+    
     setSosHolding(false);
     setSosTimer(0);
     if (sosTimerRef.current) {

@@ -4,6 +4,7 @@ import { DeviceService } from '@/lib/deviceService';
 import { triggerEmergencyCall } from '@/lib/emergencyService';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
+import * as Haptics from 'expo-haptics';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -40,6 +41,7 @@ export function CurrencyConverter() {
   const sosOpacity = useRef(new Animated.Value(0)).current;
   const sosTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sosAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
+  const sosHapticIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Check if user document exists on component mount
   useEffect(() => {
@@ -100,6 +102,14 @@ export function CurrencyConverter() {
   };
 
   const handleSOSLongPressStart = () => {
+    // Haptic feedback on press
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    
+    // Continuous haptic feedback while holding
+    sosHapticIntervalRef.current = setInterval(() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }, 150); // Vibrate every 150ms
+    
     // Reset and start animations
     sosProgress.setValue(0);
     sosOpacity.setValue(0);
@@ -126,6 +136,12 @@ export function CurrencyConverter() {
   };
 
   const handleSOSLongPressEnd = () => {
+    // Cancel haptic interval
+    if (sosHapticIntervalRef.current) {
+      clearInterval(sosHapticIntervalRef.current);
+      sosHapticIntervalRef.current = null;
+    }
+    
     // Cancel animation and timer
     if (sosTimerRef.current) {
       clearTimeout(sosTimerRef.current);
@@ -154,6 +170,9 @@ export function CurrencyConverter() {
   };
 
   const triggerSOS = async () => {
+    // Success haptic - notify user SOS is triggered
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    
     try {
       const deviceService = DeviceService.getInstance();
       const userDoc = await deviceService.getUserDocument();
