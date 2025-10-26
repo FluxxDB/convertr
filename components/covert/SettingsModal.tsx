@@ -3,19 +3,22 @@ import { DeviceService, UserDocument } from '@/lib/deviceService';
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
-  Alert,
-  Animated,
-  Dimensions,
-  Modal,
-  PanResponder,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Animated,
+    Dimensions,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    PanResponder,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -57,6 +60,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [slideAnim] = useState(new Animated.Value(SCREEN_HEIGHT));
   const [overlayOpacity] = useState(new Animated.Value(0));
   const [dragY] = useState(new Animated.Value(0));
+  const [keyboardOffset] = useState(new Animated.Value(0));
 
   // Pan responder for drag to close
   const panResponder = PanResponder.create({
@@ -112,6 +116,36 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       ]).start();
     }
   }, [isOpen]);
+
+  // Keyboard handling
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        Animated.timing(keyboardOffset, {
+          toValue: -e.endCoordinates.height * 0.5,
+          duration: Platform.OS === 'ios' ? e.duration : 250,
+          useNativeDriver: true,
+        }).start();
+      }
+    );
+
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      (e) => {
+        Animated.timing(keyboardOffset, {
+          toValue: 0,
+          duration: Platform.OS === 'ios' ? e.duration : 250,
+          useNativeDriver: true,
+        }).start();
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, []);
 
   const handleClose = () => {
     Animated.parallel([
@@ -313,32 +347,37 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           },
         ]}
       >
-        <View style={[styles.sheet, { backgroundColor: colors.background }]}>
-          {/* Drag Handle */}
-          <View style={styles.dragHandleContainer} {...panResponder.panHandlers}>
-            <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
-          </View>
-
-          {/* Header */}
-          <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <View style={styles.headerLeft}>
-              {currentPage !== 'main' && (
-                <TouchableOpacity
-                  onPress={() => setCurrentPage('main')}
-                  style={[styles.backButton, { backgroundColor: 'transparent' }]}
-                >
-                  <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
-                </TouchableOpacity>
-              )}
-              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{getPageTitle()}</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+          keyboardVerticalOffset={0}
+        >
+          <View style={[styles.sheet, { backgroundColor: colors.background }]}>
+            {/* Drag Handle */}
+            <View style={styles.dragHandleContainer} {...panResponder.panHandlers}>
+              <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
             </View>
-            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-              <Ionicons name="close" size={20} color={colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
 
-          {/* Content */}
-          <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+            {/* Header */}
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
+              <View style={styles.headerLeft}>
+                {currentPage !== 'main' && (
+                  <TouchableOpacity
+                    onPress={() => setCurrentPage('main')}
+                    style={[styles.backButton, { backgroundColor: 'transparent' }]}
+                  >
+                    <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
+                  </TouchableOpacity>
+                )}
+                <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{getPageTitle()}</Text>
+              </View>
+              <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+                <Ionicons name="close" size={20} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Content */}
+            <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
             {currentPage === 'main' && (
               <>
                 {/* Appearance */}
@@ -540,7 +579,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </View>
             )}
           </ScrollView>
-        </View>
+          </View>
+        </KeyboardAvoidingView>
       </Animated.View>
 
       {/* Contact Modal */}
@@ -548,17 +588,25 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <Modal transparent visible={isContactModalOpen} animationType="fade">
           <View style={styles.modalOverlay}>
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsContactModalOpen(false)} />
-            <View style={[styles.modal, { backgroundColor: colors.background }]}>
-              <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                  {editingContact ? 'Edit Contact' : 'Add Contact'}
-                </Text>
-                <TouchableOpacity onPress={() => setIsContactModalOpen(false)}>
-                  <Ionicons name="close" size={20} color={colors.textPrimary} />
-                </TouchableOpacity>
-              </View>
-              
-              <View style={styles.modalContent}>
+            <Animated.View 
+              style={[
+                styles.modal, 
+                { 
+                  backgroundColor: colors.background,
+                  transform: [{ translateY: keyboardOffset }]
+                }
+              ]}
+            >
+                <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                  <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+                    {editingContact ? 'Edit Contact' : 'Add Contact'}
+                  </Text>
+                  <TouchableOpacity onPress={() => setIsContactModalOpen(false)}>
+                    <Ionicons name="close" size={20} color={colors.textPrimary} />
+                  </TouchableOpacity>
+                </View>
+                
+                <View style={styles.modalContent}>
                 <View style={styles.formGroup}>
                   <Text style={[styles.formLabel, { color: colors.textSecondary }]}>Name</Text>
                   <TextInput
@@ -625,8 +673,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   <Text style={styles.saveButtonText}>Save</Text>
                 </TouchableOpacity>
               </View>
+            </Animated.View>
             </View>
-          </View>
         </Modal>
       )}
 
@@ -635,15 +683,23 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <Modal transparent visible={isMessageModalOpen} animationType="fade">
           <View style={styles.modalOverlay}>
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsMessageModalOpen(false)} />
-            <View style={[styles.modal, { backgroundColor: colors.background }]}>
-              <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Edit Notes for Emergency</Text>
-                <TouchableOpacity onPress={() => setIsMessageModalOpen(false)}>
-                  <Ionicons name="close" size={20} color={colors.textPrimary} />
-                </TouchableOpacity>
-              </View>
+            <Animated.View 
+              style={[
+                styles.modal, 
+                { 
+                  backgroundColor: colors.background,
+                  transform: [{ translateY: keyboardOffset }]
+                }
+              ]}
+            >
+                <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                  <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Edit Notes for Emergency</Text>
+                  <TouchableOpacity onPress={() => setIsMessageModalOpen(false)}>
+                    <Ionicons name="close" size={20} color={colors.textPrimary} />
+                  </TouchableOpacity>
+                </View>
 
-              <View style={styles.modalContent}>
+                <View style={styles.modalContent}>
                 <TextInput
                   value={tempMessage}
                   onChangeText={setTempMessage}
@@ -673,8 +729,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   <Text style={styles.saveButtonText}>Save Notes</Text>
                 </TouchableOpacity>
               </View>
+            </Animated.View>
             </View>
-          </View>
         </Modal>
       )}
 
@@ -683,15 +739,23 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <Modal transparent visible={isFullNameModalOpen} animationType="fade">
           <View style={styles.modalOverlay}>
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsFullNameModalOpen(false)} />
-            <View style={[styles.modal, { backgroundColor: colors.background }]}>
-              <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Edit Full Name</Text>
-                <TouchableOpacity onPress={() => setIsFullNameModalOpen(false)}>
-                  <Ionicons name="close" size={20} color={colors.textPrimary} />
-                </TouchableOpacity>
-              </View>
+            <Animated.View 
+              style={[
+                styles.modal, 
+                { 
+                  backgroundColor: colors.background,
+                  transform: [{ translateY: keyboardOffset }]
+                }
+              ]}
+            >
+                <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                  <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Edit Full Name</Text>
+                  <TouchableOpacity onPress={() => setIsFullNameModalOpen(false)}>
+                    <Ionicons name="close" size={20} color={colors.textPrimary} />
+                  </TouchableOpacity>
+                </View>
 
-              <View style={styles.modalContent}>
+                <View style={styles.modalContent}>
                 <TextInput
                   value={tempFullName}
                   onChangeText={setTempFullName}
@@ -719,8 +783,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   <Text style={styles.saveButtonText}>Save Name</Text>
                 </TouchableOpacity>
               </View>
+            </Animated.View>
             </View>
-          </View>
         </Modal>
       )}
 
@@ -729,15 +793,23 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         <Modal transparent visible={isAccessPinModalOpen} animationType="fade">
           <View style={styles.modalOverlay}>
             <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsAccessPinModalOpen(false)} />
-            <View style={[styles.modal, { backgroundColor: colors.background }]}>
-              <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Edit Access PIN</Text>
-                <TouchableOpacity onPress={() => setIsAccessPinModalOpen(false)}>
-                  <Ionicons name="close" size={20} color={colors.textPrimary} />
-                </TouchableOpacity>
-              </View>
+            <Animated.View 
+              style={[
+                styles.modal, 
+                { 
+                  backgroundColor: colors.background,
+                  transform: [{ translateY: keyboardOffset }]
+                }
+              ]}
+            >
+                <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                  <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Edit Access PIN</Text>
+                  <TouchableOpacity onPress={() => setIsAccessPinModalOpen(false)}>
+                    <Ionicons name="close" size={20} color={colors.textPrimary} />
+                  </TouchableOpacity>
+                </View>
 
-              <View style={styles.modalContent}>
+                <View style={styles.modalContent}>
                 <TextInput
                   value={tempAccessPin}
                   onChangeText={(text) => {
@@ -771,8 +843,8 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   <Text style={styles.saveButtonText}>Save PIN</Text>
                 </TouchableOpacity>
               </View>
+            </Animated.View>
             </View>
-          </View>
         </Modal>
       )}
     </Modal>

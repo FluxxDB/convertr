@@ -4,13 +4,12 @@ import { DeviceService } from '@/lib/deviceService';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import RNPickerSelect from 'react-native-picker-select';
 
@@ -45,23 +44,6 @@ export function CurrencyConverter() {
   }, [router]);
 
   useEffect(() => {
-    // Check for PIN
-    const checkPin = async () => {
-      try {
-        const deviceService = DeviceService.getInstance();
-        const userDoc = await deviceService.getUserDocument();
-        
-        if (userDoc && userDoc.pin && amount === userDoc.pin) {
-          activateCovertMode();
-          return;
-        }
-      } catch (error) {
-        console.error('Error checking PIN:', error);
-      }
-    };
-
-    checkPin();
-
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || amount === '') {
       setResult(null);
@@ -72,9 +54,23 @@ export function CurrencyConverter() {
     const toRate = EXCHANGE_RATES[toCurrency];
     const converted = (numAmount / fromRate) * toRate;
     setResult(converted);
-  }, [amount, fromCurrency, toCurrency, activateCovertMode]);
+  }, [amount, fromCurrency, toCurrency]);
 
-  const handleSwap = () => {
+  const handleSwap = async () => {
+    // Check for PIN first
+    try {
+      const deviceService = DeviceService.getInstance();
+      const userDoc = await deviceService.getUserDocument();
+      
+      if (userDoc && userDoc.pin && amount === userDoc.pin) {
+        activateCovertMode();
+        return; // Don't swap, just activate covert mode
+      }
+    } catch (error) {
+      console.error('Error checking PIN:', error);
+    }
+
+    // If not PIN, proceed with normal swap
     setFromCurrency(toCurrency);
     setToCurrency(fromCurrency);
     if (result !== null) {
@@ -89,7 +85,7 @@ export function CurrencyConverter() {
   }));
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerBackground}>
@@ -178,7 +174,7 @@ export function CurrencyConverter() {
       <View style={styles.footer}>
         <Text style={styles.footerText}>Exchange rates updated daily</Text>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -186,9 +182,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
-  },
-  contentContainer: {
-    flexGrow: 1,
   },
   header: {
     backgroundColor: '#40916c',

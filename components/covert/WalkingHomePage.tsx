@@ -3,6 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
     Dimensions,
+    SafeAreaView,
+    StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -30,7 +32,11 @@ export function WalkingHomePage({
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar
+        barStyle={colors.background === '#ffffff' ? 'dark-content' : 'light-content'}
+        backgroundColor={colors.background}
+      />
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={onBack} style={styles.backButton}>
@@ -92,7 +98,7 @@ export function WalkingHomePage({
           </View>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

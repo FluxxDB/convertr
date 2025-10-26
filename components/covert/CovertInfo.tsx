@@ -2,14 +2,16 @@ import { DeviceService, UserDocument } from '@/lib/deviceService';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { CovertStatusBar } from './CovertStatusBar';
 
@@ -143,7 +145,11 @@ export function CovertInfo() {
   return (
     <SafeAreaView style={styles.container}>
       <CovertStatusBar isConnected={firebaseConnected} />
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Text style={styles.title}>Emergency Information</Text>
           <Text style={styles.subtitle}>Keep your emergency details up to date</Text>
@@ -223,6 +229,7 @@ export function CovertInfo() {
           )}
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <View style={styles.navigationBar}>
         <TouchableOpacity style={styles.navButton} onPress={handleBack}>

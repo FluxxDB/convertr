@@ -8,16 +8,18 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
     Animated,
     Dimensions,
-    PanResponder,
     Platform,
     Pressable,
+    SafeAreaView,
     ScrollView,
+    StatusBar,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SettingsModal } from './SettingsModal';
 import { VoiceMemoPage } from './VoiceMemoPage';
 import { WalkingHomePage } from './WalkingHomePage';
@@ -31,6 +33,7 @@ type ConnectivityStatus = 'peer' | 'wifi' | 'cellular';
 export function CovertApp() {
   const { colors } = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sosHolding, setSosHolding] = useState(false);
@@ -47,59 +50,14 @@ export function CovertApp() {
   const [locationAvailable, setLocationAvailable] = useState<boolean>(false);
   const [detailedLocation, setDetailedLocation] = useState<string>('');
 
-  const sosTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const voiceMemoTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const sosTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const voiceMemoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Animation refs
   const sidebarAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
   const overlayAnim = useRef(new Animated.Value(0)).current;
   const mainContentAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
-
-  // Swipe gesture
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        const { dx, dy } = gestureState;
-        // Only respond to horizontal swipes
-        return Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10;
-      },
-      onPanResponderMove: (_, gestureState) => {
-        const { dx, moveX } = gestureState;
-        
-        if (!sidebarOpen && moveX < 50 && dx > 0) {
-          // Swipe from left edge to open
-          const newValue = Math.min(dx - SIDEBAR_WIDTH, 0);
-          sidebarAnim.setValue(newValue);
-          overlayAnim.setValue(Math.min(dx / SIDEBAR_WIDTH, 1));
-          mainContentAnim.setValue(Math.min(dx, SIDEBAR_WIDTH));
-        } else if (sidebarOpen && dx < 0) {
-          // Swipe left to close
-          const newValue = Math.max(dx, -SIDEBAR_WIDTH);
-          sidebarAnim.setValue(newValue);
-          overlayAnim.setValue(1 + dx / SIDEBAR_WIDTH);
-          mainContentAnim.setValue(SIDEBAR_WIDTH + dx);
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        const { dx, moveX } = gestureState;
-        
-        if (!sidebarOpen && moveX < 50 && dx > SIDEBAR_WIDTH * 0.3) {
-          openSidebar();
-        } else if (sidebarOpen && dx < -SIDEBAR_WIDTH * 0.3) {
-          closeSidebar();
-        } else {
-          // Reset to current state
-          if (sidebarOpen) {
-            openSidebar();
-          } else {
-            closeSidebar();
-          }
-        }
-      },
-    })
-  ).current;
 
   const openSidebar = () => {
     setSidebarOpen(true);
@@ -414,7 +372,11 @@ export function CovertApp() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]} {...panResponder.panHandlers}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar
+        barStyle={colors.background === '#ffffff' ? 'dark-content' : 'light-content'}
+        backgroundColor={colors.background}
+      />
       {/* Sidebar */}
       <Animated.View
         style={[
@@ -422,7 +384,7 @@ export function CovertApp() {
           { backgroundColor: colors.background, transform: [{ translateX: sidebarAnim }] },
         ]}
       >
-        <View style={styles.sidebarContent}>
+        <View style={[styles.sidebarContent, { paddingTop: insets.top + 16 }]}>
           {/* Search Bar */}
           <View style={[styles.searchContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
@@ -476,15 +438,6 @@ export function CovertApp() {
                 SOS {sosHolding ? '(Sending...)' : '(Press & Hold)'}
               </Text>
             </TouchableOpacity>
-
-            {/* Log Out Button */}
-            <TouchableOpacity
-              onPress={handleLogout}
-              style={[styles.quickActionButton, { backgroundColor: 'transparent' }]}
-            >
-              <Ionicons name="log-out-outline" size={20} color={colors.textSecondary} />
-              <Text style={[styles.quickActionText, { color: colors.textPrimary }]}>Log Out</Text>
-            </TouchableOpacity>
           </View>
 
           {/* Conversations List */}
@@ -508,15 +461,21 @@ export function CovertApp() {
 
           {/* Settings Button */}
           <TouchableOpacity
-            onPress={() => {
-              closeSidebar();
-              setTimeout(() => setSettingsOpen(true), 300);
-            }}
+            onPress={() => setSettingsOpen(true)}
             style={[styles.settingsButton, { borderTopColor: colors.border }]}
           >
             <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
             <Text style={[styles.settingsText, { color: colors.textPrimary }]}>Settings</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          {/* Exit Button */}
+          <TouchableOpacity
+            onPress={handleLogout}
+            style={[styles.settingsButton, { borderTopWidth: 0 }]}
+          >
+            <Ionicons name="arrow-back" size={20} color={colors.danger} />
+            <Text style={[styles.settingsText, { color: colors.danger }]}>Exit</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>
@@ -559,7 +518,11 @@ export function CovertApp() {
         </View>
 
         {/* Chat Area */}
-        <ScrollView style={styles.chatArea} contentContainerStyle={styles.chatAreaContent}>
+        <ScrollView 
+          style={styles.chatArea} 
+          contentContainerStyle={styles.chatAreaContent}
+          scrollEnabled={false}
+        >
           <View style={styles.cardsGrid}>
             {/* Notepad - Full width */}
             <TouchableOpacity
@@ -706,7 +669,7 @@ export function CovertApp() {
           </View>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -729,7 +692,8 @@ const styles = StyleSheet.create({
   },
   sidebarContent: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   searchContainer: {
     flexDirection: 'row',

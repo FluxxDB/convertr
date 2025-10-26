@@ -9,7 +9,13 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
           <Stack.Screen name="initial-setup" />
-          <Stack.Screen name="covert" />
+          <Stack.Screen 
+            name="covert" 
+            options={{ 
+              gestureEnabled: false,
+              animation: 'none'
+            }} 
+          />
           <Stack.Screen name="info" />
         </Stack>
       </AppStateProvider>
