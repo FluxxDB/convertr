@@ -7,7 +7,6 @@ import {
     Animated,
     Dimensions,
     Keyboard,
-    KeyboardAvoidingView,
     Modal,
     PanResponder,
     Platform,
@@ -348,16 +347,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           },
         ]}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-          keyboardVerticalOffset={0}
-        >
-          <View style={[styles.sheet, { backgroundColor: colors.background }]}>
-            {/* Drag Handle */}
-            <View style={styles.dragHandleContainer} {...panResponder.panHandlers}>
-              <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
-            </View>
+        <View style={[styles.sheet, { backgroundColor: colors.background }]}>
+          {/* Drag Handle */}
+          <View style={styles.dragHandleContainer} {...panResponder.panHandlers}>
+            <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
+          </View>
 
             {/* Header */}
             <View style={[styles.header, { borderBottomColor: colors.border }]}>
@@ -580,8 +574,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </View>
             )}
           </ScrollView>
-          </View>
-        </KeyboardAvoidingView>
+        </View>
       </Animated.View>
 
       {/* Contact Modal */}
