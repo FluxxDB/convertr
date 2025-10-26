@@ -2,6 +2,7 @@ import { DeviceService, UserDocument } from '@/lib/deviceService';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { CovertStatusBar } from './CovertStatusBar';
 
 export function CovertMain() {
   const router = useRouter();
@@ -69,6 +70,7 @@ export function CovertMain() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <CovertStatusBar isConnected={firebaseConnected} />
       <View style={styles.content}>
         <Text style={styles.text}>covert</Text>
         

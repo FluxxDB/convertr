@@ -11,6 +11,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { CovertStatusBar } from './CovertStatusBar';
 
 export function CovertInfo() {
   const router = useRouter();
@@ -124,6 +125,7 @@ export function CovertInfo() {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
+        <CovertStatusBar isConnected={firebaseConnected} />
         <View style={styles.content}>
           <Text style={styles.loadingText}>Loading your information...</Text>
         </View>
@@ -133,6 +135,7 @@ export function CovertInfo() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <CovertStatusBar isConnected={firebaseConnected} />
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Text style={styles.title}>Emergency Information</Text>
