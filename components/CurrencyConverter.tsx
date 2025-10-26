@@ -96,7 +96,7 @@ export function CurrencyConverter() {
           <View style={styles.decorCircle2} />
         </View>
         <View style={styles.headerContent}>
-          <View style={{ height: 8 }} />
+          <View style={{ height: 12 }} />
           <Text style={styles.title}>Convertr</Text>
           <Text style={styles.subtitle}>Real-time exchange rates • Instant conversion</Text>
         </View>
