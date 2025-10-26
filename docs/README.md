@@ -1,4 +1,4 @@
-# Convertr - Currency Converter with Covert Mode
+# Convrt - Currency Converter with Covert Mode
 
 This is a dual-purpose mobile application built with [Expo](https://expo.dev) and React Native. It serves as a currency converter on the surface, but contains a hidden covert communications feature for individuals in domestic high-risk situations.
 
