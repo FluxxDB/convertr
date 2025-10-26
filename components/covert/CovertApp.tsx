@@ -1,6 +1,7 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import { DeviceService } from '@/lib/deviceService';
 import { triggerEmergencyCall } from '@/lib/emergencyService';
+import { Note, NotepadService } from '@/lib/notepadService';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
@@ -50,9 +51,11 @@ export function CovertApp() {
   const [currentAddress, setCurrentAddress] = useState<string>('Getting location...');
   const [locationAvailable, setLocationAvailable] = useState<boolean>(false);
   const [detailedLocation, setDetailedLocation] = useState<string>('');
+  const [recentNotes, setRecentNotes] = useState<Note[]>([]);
 
   const sosTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const voiceMemoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const notepadService = NotepadService.getInstance();
 
   // Animation refs
   const sidebarAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
@@ -216,6 +219,17 @@ export function CovertApp() {
     setCurrentPage('notepad');
   };
 
+  const loadRecentNotes = async () => {
+    try {
+      const notes = await notepadService.getAllNotes();
+      // Get only the 3 most recent notes
+      setRecentNotes(notes.slice(0, 3));
+    } catch (error) {
+      console.error('[CovertApp] Error loading recent notes:', error);
+      setRecentNotes([]);
+    }
+  };
+
   const handleLogout = () => {
     router.push('/' as any);
   };
@@ -226,6 +240,13 @@ export function CovertApp() {
       if (voiceMemoTimerRef.current) clearTimeout(voiceMemoTimerRef.current);
     };
   }, []);
+
+  // Load recent notes on mount and when returning to home page
+  useEffect(() => {
+    if (currentPage === 'home') {
+      loadRecentNotes();
+    }
+  }, [currentPage]);
 
   // Pulse animation for SOS alert
   useEffect(() => {
@@ -449,23 +470,42 @@ export function CovertApp() {
             </TouchableOpacity>
           </View>
 
-          {/* Conversations List */}
+          {/* Recent Notes List */}
           <ScrollView style={styles.conversationsList} showsVerticalScrollIndicator={false}>
-            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Recent</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Recent Notes</Text>
 
-            {['Conversation 1', 'Conversation 2', 'Conversation 3'].map((title, index) => (
-              <TouchableOpacity key={index} style={styles.conversationItem}>
-                <Ionicons name="chatbubble-outline" size={20} color={colors.textPrimary} />
-                <Text style={[styles.conversationText, { color: colors.textPrimary }]} numberOfLines={1}>
-                  {title}
-                </Text>
+            {recentNotes.length > 0 ? (
+              <>
+                {recentNotes.map((note) => (
+                  <TouchableOpacity 
+                    key={note.id} 
+                    style={styles.conversationItem}
+                    onPress={handleNotepadClick}
+                  >
+                    <Ionicons name="document-text-outline" size={20} color={colors.textPrimary} />
+                    <Text style={[styles.conversationText, { color: colors.textPrimary }]} numberOfLines={1}>
+                      {note.title}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+
+                <TouchableOpacity 
+                  style={styles.conversationItem}
+                  onPress={handleNotepadClick}
+                >
+                  <Feather name="more-horizontal" size={20} color={colors.textSecondary} />
+                  <Text style={[styles.conversationText, { color: colors.textSecondary }]}>See all notes</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <TouchableOpacity 
+                style={styles.conversationItem}
+                onPress={handleNotepadClick}
+              >
+                <Ionicons name="add-circle-outline" size={20} color={colors.textSecondary} />
+                <Text style={[styles.conversationText, { color: colors.textSecondary }]}>Create your first note</Text>
               </TouchableOpacity>
-            ))}
-
-            <TouchableOpacity style={styles.conversationItem}>
-              <Feather name="more-horizontal" size={20} color={colors.textSecondary} />
-              <Text style={[styles.conversationText, { color: colors.textSecondary }]}>See more</Text>
-            </TouchableOpacity>
+            )}
           </ScrollView>
 
           {/* Settings Button */}
