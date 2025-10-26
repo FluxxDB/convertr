@@ -23,11 +23,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SettingsModal } from './SettingsModal';
 import { VoiceMemoPage } from './VoiceMemoPage';
 import { WalkingHomePage } from './WalkingHomePage';
+import { NotepadPage } from './NotepadPage';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SIDEBAR_WIDTH = SCREEN_WIDTH * 0.85;
 
-type Page = 'home' | 'voice-memo' | 'walking-home';
+type Page = 'home' | 'voice-memo' | 'walking-home' | 'notepad';
 type ConnectivityStatus = 'peer' | 'wifi' | 'cellular';
 
 export function CovertApp() {
@@ -211,6 +212,10 @@ export function CovertApp() {
     setCurrentPage('walking-home');
   };
 
+  const handleNotepadClick = () => {
+    setCurrentPage('notepad');
+  };
+
   const handleLogout = () => {
     router.push('/' as any);
   };
@@ -371,6 +376,10 @@ export function CovertApp() {
     );
   }
 
+  if (currentPage === 'notepad') {
+    return <NotepadPage onBack={() => setCurrentPage('home')} />;
+  }
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar
@@ -526,6 +535,7 @@ export function CovertApp() {
           <View style={styles.cardsGrid}>
             {/* Notepad - Full width */}
             <TouchableOpacity
+              onPress={handleNotepadClick}
               style={[
                 styles.card,
                 styles.cardFullWidth,
